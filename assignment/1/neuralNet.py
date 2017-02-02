@@ -26,27 +26,28 @@ mod = vectorize(mod)
 maxNode = int(max(nNodes))
 localGradient = zeros((nHiddenLayer+2, maxNode))
 weightList = random.rand(nHiddenLayer+1, maxNode, maxNode)
-weightList = mod(weightList, 0.05)
+weightList = mod(weightList, 0.00005)
 weightGradient = zeros((nHiddenLayer+1, maxNode, maxNode))
 weightGradientRMSAverage = zeros((nHiddenLayer+1, maxNode, maxNode))
-biasList = random.rand(nHiddenLayer+2, maxNode)
-biasGradient = zeros((nHiddenLayer+2, maxNode))
-biasGradientRMSAverage = zeros((nHiddenLayer+2, maxNode))
+biasList = zeros((nHiddenLayer+2, maxNode))
+# biastList = mod(biasList, 0.005)
+# biasGradient = zeros((nHiddenLayer+2, maxNode))
+# biasGradientRMSAverage = zeros((nHiddenLayer+2, maxNode))
 nodeValue = zeros((nHiddenLayer+3, maxNode))
 backpropInput = zeros(maxNode)
 
 def RMSProp(eta, epsilon, gamma):
 	global weightGradientRMSAverage
 	global weightList
-	global biasGradientRMSAverage
-	global biasList
+	# global biasGradientRMSAverage
+	# global biasList
 	for i in range(0, nHiddenLayer+1):
 		for j in range(0, int(nNodes[i])):
 			for k in range(0, int(nNodes[i+1])):
 				weightGradientRMSAverage[i][j][k] = gamma*weightGradientRMSAverage[i][j][k] + (1-gamma) * weightGradient[i][j][k] * weightGradient[i][j][k]
 				weightList[i][j][k] -= eta*weightGradient[i][j][k]/sqrt(weightGradientRMSAverage[i][j][k]+epsilon)
-			biasGradientRMSAverage[i][j] = gamma*biasGradientRMSAverage[i][j] + (1-gamma) * biasGradient[i][j] * biasGradient[i][j]
-			biasList[i][j] -= eta*biasGradient[i][j]/sqrt(biasGradientRMSAverage[i][j]+epsilon)
+			# biasGradientRMSAverage[i][j] = gamma*biasGradientRMSAverage[i][j] + (1-gamma) * biasGradient[i][j] * biasGradient[i][j]
+			# biasList[i][j] -= eta*biasGradient[i][j]/sqrt(biasGradientRMSAverage[i][j]+epsilon)
 
 def mod(x,d):
 	return x%d
@@ -122,10 +123,11 @@ def forwardFeed(mlpInput, lbl, checkGradient=0):
 	global nodeValue
 	global weightList
 	global backpropInput
-	global biasList
+	#global biasList
 	global localGradient
 
 	nodeValue[0] = copy(mlpInput)
+	#print nodeValue[0]
 	for i in range(1, nHiddenLayer+2):
 		for j in range(0, int(nNodes[i])):
 			iput = 0
@@ -133,16 +135,9 @@ def forwardFeed(mlpInput, lbl, checkGradient=0):
 				iput+= nodeValue[i-1][k]*weightList[i-1][k][j]
 			nodeValue[i][j] = globals()[actFunIndex_name](iput) + biasList[i][j]
 			localGradient[i][j] = globals()[actFunIndex_name+'Derivative'](iput)
-		# if checkGradient ==0:
-		# 	print "Forward step Node value at ", i, "th layer:", nodeValue[i][:int(nNodes[i])]
-		# 	print "Forward step Local gradient value at ", i, "th layer:", localGradient[i][:int(nNodes[i])]
 
 	i = nHiddenLayer+2
 	nodeValue[i][:int(nNodes[i])] = softMax(nodeValue[i-1])
-	# if checkGradient ==0:
-	# 	#print "Forward step Node value at ", i, "th layer:", nodeValue[i][:int(nNodes[i])]
-	# 	backpropInput = copy(nodeValue[i])
-	# 	backpropInput[lbl[0]] = backpropInput[lbl[0]] - 1
 	return costFunction(nodeValue[i], lbl)
 
 def backwardFeed(lbl):
@@ -150,24 +145,21 @@ def backwardFeed(lbl):
 	global weightList
 	global weightGradient
 	global backpropInput
-	global biasList
-	global biasGradient
+	# global biasList
+	# global biasGradient
 	global localGradient
 	backpropInput = copy(nodeValue[nHiddenLayer+2])
 	backpropInput[lbl[0]] = backpropInput[lbl[0]] - 1
 	i = nHiddenLayer + 1
 	for j in range(0, int(nNodes[i])):
 		localGradient[i][j] *= backpropInput[j]
-		#print "Backprop step Local gradient at ", i, "th layer:", localGradient[i][:int(nNodes[i])]
 	for i in range(nHiddenLayer, 0, -1):
 		for j in range(0, int(nNodes[i])):
 			backpropInput[j] = 0
 			for k in range(0, int(nNodes[i+1])):
 				backpropInput[j] += weightList[i][j][k]*localGradient[i+1][k]
-			#print "Backprop input to ", i, "th layer:", backpropInput[:int(nNodes[i])]
-			biasGradient[i][j] += backpropInput[j]
+			#biasGradient[i][j] += backpropInput[j]
 			localGradient[i][j] *= backpropInput[j]
-		#print "Backprop step Local gradient at ", i, "th layer:", localGradient[i][:int(nNodes[i])]
 	
 	for i in range(1, nHiddenLayer+2):
 		for j in range(0, int(nNodes[i])):
@@ -179,10 +171,10 @@ def mlpTrain(trainingImgs, trainingLbls, iterations, nImage,):
 	global nodeValue
 	global weightList
 	global backpropInput
-	global biasList
 	global localGradient
 	global weightGradient
-	global biasGradient
+	# global biasList
+	# global biasGradient
 
 	totalImages = len(trainingImgs)
 
@@ -190,10 +182,12 @@ def mlpTrain(trainingImgs, trainingLbls, iterations, nImage,):
 	while iterations>0:
 		iterations -=1
 		
+		#print "Weight of weight[1][0][0] before", iterations, "th iteration:", weightList[0]
 		imgIndexList = sample(range(0, totalImages), nImage)
 		#print imgIndexList
-		weightGradient = zeros((nHiddenLayer+1, maxNode, maxNode))
-		biasGradient = zeros((nHiddenLayer+2, maxNode))
+		#global weightGradient = zeros((nHiddenLayer+1, maxNode, maxNode))
+		weightGradient.fill(0)
+		# biasGradient.fill(0)
 		cost = 0
 		for imgIndex in imgIndexList:
 			img = trainingImgs[imgIndex]
@@ -206,54 +200,23 @@ def mlpTrain(trainingImgs, trainingLbls, iterations, nImage,):
 			for j in range(0, int(nNodes[i])):
 				for k in range(0, int(nNodes[i+1])):
 					weightGradient[i][j][k] /= nImage
-				biasGradient[i][j]/=nImage
+				#biasGradient[i][j]/=nImage
 		RMSProp(0.003, 1e-8, 0.9)
 			
-			#i = nHiddenLayer+1
-			#print "Backprop input to ", i, "th layer:", backpropInput[:int(nNodes[i])]
-			# for j in range(0, int(nNodes[i])):
-			# 	localGradient[i][j] *= backpropInput[j]
-			# #print "Backprop step Local gradient at ", i, "th layer:", localGradient[i][:int(nNodes[i])]
-			# for i in range(nHiddenLayer, 0, -1):
-			# 	for j in range(0, int(nNodes[i])):
-			# 		backpropInput[j] = 0
-			# 		for k in range(0, int(nNodes[i+1])):
-			# 			backpropInput[j] += weightList[i][j][k]*localGradient[i+1][k]
-			# 		#print "Backprop input to ", i, "th layer:", backpropInput[:int(nNodes[i])]
-			# 		localGradient[i][j] *= backpropInput[j]
-			# 	#print "Backprop step Local gradient at ", i, "th layer:", localGradient[i][:int(nNodes[i])]
-			
-			# for i in range(1, nHiddenLayer+2):
-			# 	for j in range(0, int(nNodes[i])):
-			# 		for k in range(0, int(nNodes[i-1])):
-			# 			weightGradient[i-1][k][j] = localGradient[i][j]*nodeValue[i-1][k]
-
-			# temp = copy(localGradient)
-			# temp_array = copy(nodeValue)
-
-			# Gradient testing method
-			# for i in range(1, nHiddenLayer+2):
-			# 	for j in range(0, int(nNodes[i])):
-			# 		for k in range(0, int(nNodes[i-1])):
-			# 			weightList[i-1][k][j] += 0.0001
-			# 			diff_cost = forwardFeed(img, lbl,1) - initial_cost
-			# 			weightList[i-1][k][j] -= 0.0001
-			# 			a = temp[i][j]*temp_array[i-1][k]
-			# 			b = diff_cost*10000
-			# 			print a,b
-
 
 def mlpTest(testingImgs, testingLbls):
-	global nodeValue
+	#global nodeValue
 
 	print "Testing"
 	totalImages = len(testingImgs)
 	correctPrediction = 0
 	for imgIndex in range(0, totalImages):
 		cost = forwardFeed(testingImgs[imgIndex], testingLbls[imgIndex])
+		# for layer in range(0, nHiddenLayer+3):
+		# 	print "LAYER", layer, nodeValue[layer][:nNodes[layer]]
 		prediction = argmax(nodeValue[nHiddenLayer+2][:int(nNodes[nHiddenLayer+2])])
 		print "Image index: ", imgIndex, prediction, testingLbls[imgIndex][0]
-		print "Softmax output", nodeValue[nHiddenLayer+2][:int(nNodes[nHiddenLayer+2])] 
+		#print "Softmax output", nodeValue[nHiddenLayer+2][:int(nNodes[nHiddenLayer+2])] 
 		if prediction == testingLbls[imgIndex][0]:
 			correctPrediction+=1
 			#print correctPrediction
@@ -267,5 +230,6 @@ trainingImgs, trainingLbls = loadMNIST('training')
 testingImgs, testingLbls = loadMNIST('testing')
 
 mlpInit()
+#print trainingImgs[0]
 mlpTrain(trainingImgs, trainingLbls, 1000, 10)
-#mlpTest(testingImgs, testingLbls)
+mlpTest(testingImgs, testingLbls)
