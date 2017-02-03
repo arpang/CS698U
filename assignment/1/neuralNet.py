@@ -4,6 +4,9 @@ from pylab import *
 from numpy import *
 from random import sample
 
+# To do:
+# Bias gradient 
+# Re factor code?
 
 actFunIndex_name = ''
 nHiddenLayer = 1
@@ -11,11 +14,12 @@ nNodes = zeros(nHiddenLayer+4)
 
 
 
+
 layer = 0
 nNodes[layer] = 28*28
 layer += 1
 while layer<=nHiddenLayer:
-	nNodes[layer] = 50
+	nNodes[layer] = 100
 	layer+=1
 nNodes[nHiddenLayer+1] = 10
 nNodes[nHiddenLayer+2] = 10
@@ -26,31 +30,45 @@ mod = vectorize(mod)
 maxNode = int(max(nNodes))
 localGradient = zeros((nHiddenLayer+2, maxNode))
 weightList = random.rand(nHiddenLayer+1, maxNode, maxNode)
-weightList = mod(weightList, 0.00005)
+weightList = weightList * 0.001 #0.0005, 70 percent
 weightGradient = zeros((nHiddenLayer+1, maxNode, maxNode))
 weightGradientRMSAverage = zeros((nHiddenLayer+1, maxNode, maxNode))
-biasList = zeros((nHiddenLayer+2, maxNode))
-# biastList = mod(biasList, 0.005)
-# biasGradient = zeros((nHiddenLayer+2, maxNode))
-# biasGradientRMSAverage = zeros((nHiddenLayer+2, maxNode))
+weightGradientMomentum = zeros((nHiddenLayer+1, maxNode, maxNode))
+biasList = random.rand(nHiddenLayer+2, maxNode)
+biasList = biasList * 0.001
+biasGradient = zeros((nHiddenLayer+2, maxNode))
+biasGradientRMSAverage = zeros((nHiddenLayer+2, maxNode))
+biasGradientMomentum = zeros((nHiddenLayer+2, maxNode))
 nodeValue = zeros((nHiddenLayer+3, maxNode))
 backpropInput = zeros(maxNode)
 
 def RMSProp(eta, epsilon, gamma):
 	global weightGradientRMSAverage
 	global weightList
-	# global biasGradientRMSAverage
-	# global biasList
+	global biasGradientRMSAverage
+	global biasList
 	for i in range(0, nHiddenLayer+1):
 		for j in range(0, int(nNodes[i])):
 			for k in range(0, int(nNodes[i+1])):
 				weightGradientRMSAverage[i][j][k] = gamma*weightGradientRMSAverage[i][j][k] + (1-gamma) * weightGradient[i][j][k] * weightGradient[i][j][k]
 				weightList[i][j][k] -= eta*weightGradient[i][j][k]/sqrt(weightGradientRMSAverage[i][j][k]+epsilon)
-			# biasGradientRMSAverage[i][j] = gamma*biasGradientRMSAverage[i][j] + (1-gamma) * biasGradient[i][j] * biasGradient[i][j]
-			# biasList[i][j] -= eta*biasGradient[i][j]/sqrt(biasGradientRMSAverage[i][j]+epsilon)
+			biasGradientRMSAverage[i][j] = gamma*biasGradientRMSAverage[i][j] + (1-gamma) * biasGradient[i][j] * biasGradient[i][j]
+			biasList[i][j] -= eta*biasGradient[i][j]/sqrt(biasGradientRMSAverage[i][j]+epsilon)
 
-def mod(x,d):
-	return x%d
+def gradientDescentMomentum(eta, gamma):
+	global weightGradientMomentum
+	global weightList
+	global biasGradientMomentum
+	global biasList
+
+	for i in range(0, nHiddenLayer+1):
+		for j in range(0, int(nNodes[i])):
+			for k in range(0, int(nNodes[i+1])):
+				weightGradientMomentum[i][j][k] = gamma*weightGradientMomentum[i][j][k] + eta*weightGradient[i][j][k]
+				weightList[i][j][k] -= weightGradientMomentum[i][j][k]
+			biasGradientMomentum[i][j] = gamma*biasGradientMomentum[i][j] + eta*biasGradient[i][j]
+			biasList[i][j] -= biasGradientMomentum[i][j]
+
 
 def softMax(array): 
 	#print "Softmax input", array[:10]
@@ -123,7 +141,7 @@ def forwardFeed(mlpInput, lbl, checkGradient=0):
 	global nodeValue
 	global weightList
 	global backpropInput
-	#global biasList
+	global biasList
 	global localGradient
 
 	nodeValue[0] = copy(mlpInput)
@@ -145,8 +163,8 @@ def backwardFeed(lbl):
 	global weightList
 	global weightGradient
 	global backpropInput
-	# global biasList
-	# global biasGradient
+	global biasList
+	global biasGradient
 	global localGradient
 	backpropInput = copy(nodeValue[nHiddenLayer+2])
 	backpropInput[lbl[0]] = backpropInput[lbl[0]] - 1
@@ -158,7 +176,7 @@ def backwardFeed(lbl):
 			backpropInput[j] = 0
 			for k in range(0, int(nNodes[i+1])):
 				backpropInput[j] += weightList[i][j][k]*localGradient[i+1][k]
-			#biasGradient[i][j] += backpropInput[j]
+			biasGradient[i][j] += backpropInput[j]
 			localGradient[i][j] *= backpropInput[j]
 	
 	for i in range(1, nHiddenLayer+2):
@@ -173,21 +191,23 @@ def mlpTrain(trainingImgs, trainingLbls, iterations, nImage,):
 	global backpropInput
 	global localGradient
 	global weightGradient
-	# global biasList
-	# global biasGradient
+	global biasList
+	global biasGradient
 
 	totalImages = len(trainingImgs)
 
 	print "Training"
 	while iterations>0:
-		iterations -=1
-		
-		#print "Weight of weight[1][0][0] before", iterations, "th iteration:", weightList[0]
+
+		iterations -=1		
 		imgIndexList = sample(range(0, totalImages), nImage)
-		#print imgIndexList
-		#global weightGradient = zeros((nHiddenLayer+1, maxNode, maxNode))
-		weightGradient.fill(0)
-		# biasGradient.fill(0)
+
+		for i in range(1, nHiddenLayer+2):
+			for j in range(0, int(nNodes[i])):
+				for k in range(0, int(nNodes[i-1])):
+					weightGradient[i-1][k][j] = 0
+				biasGradient[i-1][k] = 0
+				
 		cost = 0
 		for imgIndex in imgIndexList:
 			img = trainingImgs[imgIndex]
@@ -200,36 +220,29 @@ def mlpTrain(trainingImgs, trainingLbls, iterations, nImage,):
 			for j in range(0, int(nNodes[i])):
 				for k in range(0, int(nNodes[i+1])):
 					weightGradient[i][j][k] /= nImage
-				#biasGradient[i][j]/=nImage
+				biasGradient[i][j]/=nImage
 		RMSProp(0.003, 1e-8, 0.9)
 			
 
 def mlpTest(testingImgs, testingLbls):
-	#global nodeValue
-
 	print "Testing"
 	totalImages = len(testingImgs)
 	correctPrediction = 0
 	for imgIndex in range(0, totalImages):
 		cost = forwardFeed(testingImgs[imgIndex], testingLbls[imgIndex])
-		# for layer in range(0, nHiddenLayer+3):
-		# 	print "LAYER", layer, nodeValue[layer][:nNodes[layer]]
 		prediction = argmax(nodeValue[nHiddenLayer+2][:int(nNodes[nHiddenLayer+2])])
-		print "Image index: ", imgIndex, prediction, testingLbls[imgIndex][0]
-		#print "Softmax output", nodeValue[nHiddenLayer+2][:int(nNodes[nHiddenLayer+2])] 
+		print "Image index: ", imgIndex
 		if prediction == testingLbls[imgIndex][0]:
 			correctPrediction+=1
-			#print correctPrediction
 	print "Accuracy: ", correctPrediction*100/totalImages
-
-
-
 
 
 trainingImgs, trainingLbls = loadMNIST('training')
 testingImgs, testingLbls = loadMNIST('testing')
-
+print trainingImgs[0]
+trainingImgs = trainingImgs/256.0
+testingImgs = testingImgs/256.0
+print trainingImgs[0]
 mlpInit()
-#print trainingImgs[0]
 mlpTrain(trainingImgs, trainingLbls, 1000, 10)
 mlpTest(testingImgs, testingLbls)
