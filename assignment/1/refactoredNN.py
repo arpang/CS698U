@@ -72,15 +72,6 @@ class MLP:
 		return (1 - math.tanh(x)**2)
 
 	def rmsProp(self, eta, gamma, epsilon = 1e-8):
-		# for i in range(0, nHiddenLayer+1):
-		# 	for j in range(0, int(nNodes[i])):
-		# 		for k in range(0, int(nNodes[i+1])):
-		# 			self.weightGradientRMSAverage[i][j][k] = gamma*self.weightGradientRMSAverage[i][j][k] + (1-gamma) * self.weightGradient[i][j][k] * self.weightGradient[i][j][k]
-		# 			self.weightList[i][j][k] -= eta*self.weightGradient[i][j][k]/sqrt(self.weightGradientRMSAverage[i][j][k]+epsilon)
-		# 		self.biasGradientRMSAverage[i][j] = gamma*self.biasGradientRMSAverage[i][j] + (1-gamma) * self.biasGradient[i][j] * self.biasGradient[i][j]
-		# 		self.biasList[i][j] -= eta*self.biasGradient[i][j]/sqrt(self.biasGradientRMSAverage[i][j]+epsilon)
-
-		# # Second method
 		for i in range(0,nHiddenLayer+1):
 			j = int(nNodes[i])
 			k = int(nNodes[i+1])
@@ -94,14 +85,6 @@ class MLP:
 				
 
 	def gdMomentum(self, eta, gamma):
-		# for i in range(0, nHiddenLayer+1):
-		# 	for j in range(0, int(nNodes[i])):
-		# 		for k in range(0, int(nNodes[i+1])):
-		# 			self.weightGradientMomentum[i][j][k] = gamma*self.weightGradientMomentum[i][j][k] + eta*self.weightGradient[i][j][k]
-		# 			self.weightList[i][j][k] -= self.weightGradientMomentum[i][j][k]
-		# 		self.biasGradientMomentum[i][j] = gamma*self.biasGradientMomentum[i][j] + eta*self.biasGradient[i][j]
-		# 		self.biasList[i][j] -= self.biasGradientMomentum[i][j]
-		# # Second method
 		for i in range(0, nHiddenLayer+1):
 			j = int(nNodes[i])
 			k = int(nNodes[i+1])
@@ -111,46 +94,21 @@ class MLP:
 			self.biasList[i][:j] = self.biasList[i][:j] - self.biasGradientMomentum[i][:j]
 
 
-
 	def softMax(self, inputArray): 
 		output = copy(inputArray[:int(nNodes[nHiddenLayer+1])])
 		exp = vectorize(math.exp)
 		output = exp(output)
 		total = sum(output)
 		output = output/(1.0*total)
-		# print "Softmax1:", output
-		# output1 = zeros(int(nNodes[nHiddenLayer+1]))
-		# total = 0
-		# for i in range(0,int(nNodes[nHiddenLayer+1])):
-		# 	output1[i] = math.exp(inputArray[i])
-		# 	total += output1[i]
-		# for i in range(0,int(nNodes[nHiddenLayer+1])):
-		# 	output1[i] = output1[i]/total
-		# print "Softmax2:", output1
 		return output
 
 
 	def costFunction(self, predictedLabel, actualLabel):
-		# print actualLabel
-		# print predictedLabel[:9]
 		return -1*(math.log(predictedLabel[actualLabel[0]]))
 
 	def forwardFeed(self, img, lbl,checkGradient=0):
 
 		self.nodeValue[0] = copy(img)
-		# for i in range(1, nHiddenLayer+2):
-		# 	for j in range(0, int(nNodes[i])):
-		# 		iput = 0
-		# 		for k in range(0, int(nNodes[i-1])):
-		# 			iput+= self.nodeValue[i-1][k]*self.weightList[i-1][k][j]
-		# 		if self.actFunIndex==0:
-		# 			self.nodeValue[i][j] = self.relu(iput) + self.biasList[i][j]
-		# 			self.localGradient[i][j] = self.reluDerivative(iput)
-		# 		else:
-		# 			self.nodeValue[i][j] = self.tanh(iput) + self.biasList[i][j]
-		# 			self.localGradient[i][j] = self.tanhDerivative(iput)
-
-		#second method
 		for i in range(1, nHiddenLayer+2):
 			j = int(nNodes[i])
 			k = int(nNodes[i-1])
@@ -179,15 +137,6 @@ class MLP:
 		for j in range(0, int(nNodes[i])):
 			self.localGradient[i][j] *= self.backpropInput[j]
 		
-		# for i in range(nHiddenLayer, 0, -1):
-		# 	for j in range(0, int(nNodes[i])):
-		# 		self.backpropInput[j] = 0
-		# 		for k in range(0, int(nNodes[i+1])):
-		# 			self.backpropInput[j] += self.weightList[i][j][k]*self.localGradient[i+1][k]
-		# 		self.biasGradient[i][j] += self.backpropInput[j]
-		# 		self.localGradient[i][j] *= self.backpropInput[j]
-
-		# second method
 		for i in range(nHiddenLayer,0,-1):
 			j = int(nNodes[i])
 			k = int(nNodes[i+1])
@@ -198,12 +147,6 @@ class MLP:
 
 
 		
-		# for i in range(1, nHiddenLayer+2):
-		# 	for j in range(0, int(nNodes[i])):
-		# 		for k in range(0, int(nNodes[i-1])):
-		# 			self.weightGradient[i-1][k][j] += self.localGradient[i][j]*self.nodeValue[i-1][k]
-
-		#second method
 		for i in range(1, nHiddenLayer+2):
 			j = int(nNodes[i])
 			k = int(nNodes[i-1])
@@ -220,20 +163,12 @@ class MLP:
 			iterations -=1		
 			imgIndexList = sample(range(0, totalImages), nImage)
 
-			# for i in range(1, nHiddenLayer+2):
-			# 	for j in range(0, int(nNodes[i])):
-			# 		for k in range(0, int(nNodes[i-1])):
-			# 			self.weightGradient[i-1][k][j] = 0
-			# 		self.biasGradient[i-1][k] = 0
 
 			for i in range(1, nHiddenLayer+2):
 				j = int(nNodes[i])
 				k = int(nNodes[i-1])
 				self.weightGradient[i-1][:k][:,:j].fill(0)
 				self.biasGradient[i-1][:k].fill(0)
-
-#				print "Testing second method", self.weightGradient[nHiddenLayer][j-1][k-1], self.biasGradient[nHiddenLayer][k-1]
-
 					
 			cost = 0
 			for imgIndex in imgIndexList:
@@ -243,22 +178,11 @@ class MLP:
 				self.backwardFeed(lbl)
 
 			print "Cost of ", iterations, "th iteration = ", cost/nImage
-			# for i in range(0, nHiddenLayer+1):
-			# 	for j in range(0, int(nNodes[i])):
-			# 		for k in range(0, int(nNodes[i+1])):
-			# 			self.weightGradient[i][j][k] /= nImage
-			# 		self.biasGradient[i][j]/=nImage
-
-			#second method
 			for i in range(0, nHiddenLayer+1):
 				j = int(nNodes[i])
 				k = int(nNodes[i+1])
-				#print "b4 Weight gradient", self.weightGradient[i][:j][:,:k]
 				self.weightGradient[i][:j][:,:k] = self.weightGradient[i][:j][:,:k]/(1.0* nImage)
-				#print "after Weight gradient", self.weightGradient[i][:j][:,:k]
-				#print "before bias grad", self.biasGradient[i][:j]
 				self.biasGradient[i][:j] = self.biasGradient[i][:j] /(1.0* nImage)
-				#print "after bias grad", self.biasGradient[i][:j]
 
 			if self.gradFunIndex==0:
 				self.rmsProp(0.003,0.9)
@@ -266,7 +190,6 @@ class MLP:
 				self.gdMomentum(0.003,0.9)
 
 	def test(self, X, Y):
-		# nHiddenLayer me bhi self lagana padega?
 		print "Testing"
 		totalImages = len(X)
 		correctPredictions = 0
