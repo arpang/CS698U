@@ -53,7 +53,6 @@ class MLP:
 		self.backpropInput = zeros(self.maxNode)
 		self.actFunIndex = actFunIndex
 		self.gradFunIndex = gradFunIndex
-		self.relu = 
 		if actFunIndex!=0 and actFunIndex!=1:
 			raise ValueError("index of activation function must be 0 or 1")
 		if gradFunIndex!=0 and gradFunIndex!=1:
@@ -73,43 +72,43 @@ class MLP:
 		return (1 - math.tanh(x)**2)
 
 	def rmsProp(self, eta, gamma, epsilon = 1e-8):
-		for i in range(0, nHiddenLayer+1):
-			for j in range(0, int(nNodes[i])):
-				for k in range(0, int(nNodes[i+1])):
-					self.weightGradientRMSAverage[i][j][k] = gamma*self.weightGradientRMSAverage[i][j][k] + (1-gamma) * self.weightGradient[i][j][k] * self.weightGradient[i][j][k]
-					self.weightList[i][j][k] -= eta*self.weightGradient[i][j][k]/sqrt(self.weightGradientRMSAverage[i][j][k]+epsilon)
-				self.biasGradientRMSAverage[i][j] = gamma*self.biasGradientRMSAverage[i][j] + (1-gamma) * self.biasGradient[i][j] * self.biasGradient[i][j]
-				self.biasList[i][j] -= eta*self.biasGradient[i][j]/sqrt(self.biasGradientRMSAverage[i][j]+epsilon)
+		# for i in range(0, nHiddenLayer+1):
+		# 	for j in range(0, int(nNodes[i])):
+		# 		for k in range(0, int(nNodes[i+1])):
+		# 			self.weightGradientRMSAverage[i][j][k] = gamma*self.weightGradientRMSAverage[i][j][k] + (1-gamma) * self.weightGradient[i][j][k] * self.weightGradient[i][j][k]
+		# 			self.weightList[i][j][k] -= eta*self.weightGradient[i][j][k]/sqrt(self.weightGradientRMSAverage[i][j][k]+epsilon)
+		# 		self.biasGradientRMSAverage[i][j] = gamma*self.biasGradientRMSAverage[i][j] + (1-gamma) * self.biasGradient[i][j] * self.biasGradient[i][j]
+		# 		self.biasList[i][j] -= eta*self.biasGradient[i][j]/sqrt(self.biasGradientRMSAverage[i][j]+epsilon)
 
 		# # Second method
-		# for i in range(0,nHiddenLayer+1):
-		# 	j = int(nNodes[i])
-		# 	k = int(nNodes[i+1])
-		# 	self.weightGradientRMSAverage[i][:j][:,:k] = (0.1*gamma) * self.weightGradientRMSAverage[i][:j][:,:k]
-		# 	self.weightGradientRMSAverage[i][:j][:,:k] += (1.0-gamma) * multiply(self.weightGradient[i][:j][:,:k], self.weightGradient[i][:j][:,:k]) 
-		# 	self.weightList[i][:j][:,:k] = self.weightList[i][:j][:,:k] - eta*divide(self.weightGradient[i][:j][:,:k], sqrt(weightGradientRMSAverage[i][:j][:,:k]+epsilon)) 
+		for i in range(0,nHiddenLayer+1):
+			j = int(nNodes[i])
+			k = int(nNodes[i+1])
+			self.weightGradientRMSAverage[i][:j][:,:k] = (0.1*gamma) * self.weightGradientRMSAverage[i][:j][:,:k]
+			self.weightGradientRMSAverage[i][:j][:,:k] = self.weightGradientRMSAverage[i][:j][:,:k] + (1.0-gamma) * multiply(self.weightGradient[i][:j][:,:k], self.weightGradient[i][:j][:,:k]) 
+			self.weightList[i][:j][:,:k] = self.weightList[i][:j][:,:k] - eta*divide(self.weightGradient[i][:j][:,:k], sqrt(self.weightGradientRMSAverage[i][:j][:,:k]+epsilon)) 
 
-		# 	self.biasGradientRMSAverage[i][:j] = (0.1*gamma) * self.biasGradientRMSAverage[i][:j]
-		# 	self.biasGradientRMSAverage[i][:j] += (1.0-gamma) * multiply(self.biasGradient[i][:j], self.biasGradient[i][:j]) 
-		# 	self.biasList[i][:j] = self.biasList[i][:j] - eta*divide(self.biasGradient[i][:j], sqrt(biasGradientRMSAverage[i][:j]+epsilon)) 
+			self.biasGradientRMSAverage[i][:j] = (0.1*gamma) * self.biasGradientRMSAverage[i][:j]
+			self.biasGradientRMSAverage[i][:j] = self.biasGradientRMSAverage[i][:j] + (1.0-gamma) * multiply(self.biasGradient[i][:j], self.biasGradient[i][:j]) 
+			self.biasList[i][:j] = self.biasList[i][:j] - eta*divide(self.biasGradient[i][:j], sqrt(self.biasGradientRMSAverage[i][:j]+epsilon)) 
 				
 
 	def gdMomentum(self, eta, gamma):
-		for i in range(0, nHiddenLayer+1):
-			for j in range(0, int(nNodes[i])):
-				for k in range(0, int(nNodes[i+1])):
-					self.weightGradientMomentum[i][j][k] = gamma*self.weightGradientMomentum[i][j][k] + eta*self.weightGradient[i][j][k]
-					self.weightList[i][j][k] -= self.weightGradientMomentum[i][j][k]
-				self.biasGradientMomentum[i][j] = gamma*self.biasGradientMomentum[i][j] + eta*self.biasGradient[i][j]
-				self.biasList[i][j] -= self.biasGradientMomentum[i][j]
-		# # Second method
 		# for i in range(0, nHiddenLayer+1):
-		# 	j = int(nNodes[i])
-		# 	k = int(nNodes[i+1])
-		# 	self.weightGradientMomentum[i][:j][:,:k] = gamma*self.weightGradientMomentum[i][:j][:,:k] + eta*self.weightGradient[i][:j][:,:k]
-		# 	self.weightList[i][:j][:,:k] = self.weightList[i][:j][:,:k] - self.weightGradientMomentum[i][:j][:,:k]
-		# 	self.biasGradientMomentum[i][:j] = gamma*self.biasGradientMomentum[i][:j] + eta*self.biasGradient[i][:j]
-		# 	self.biasList[i][:j] = self.biasList[i][:j] - self.biasGradientMomentum[i][:j]
+		# 	for j in range(0, int(nNodes[i])):
+		# 		for k in range(0, int(nNodes[i+1])):
+		# 			self.weightGradientMomentum[i][j][k] = gamma*self.weightGradientMomentum[i][j][k] + eta*self.weightGradient[i][j][k]
+		# 			self.weightList[i][j][k] -= self.weightGradientMomentum[i][j][k]
+		# 		self.biasGradientMomentum[i][j] = gamma*self.biasGradientMomentum[i][j] + eta*self.biasGradient[i][j]
+		# 		self.biasList[i][j] -= self.biasGradientMomentum[i][j]
+		# # Second method
+		for i in range(0, nHiddenLayer+1):
+			j = int(nNodes[i])
+			k = int(nNodes[i+1])
+			self.weightGradientMomentum[i][:j][:,:k] = gamma*self.weightGradientMomentum[i][:j][:,:k] + eta*self.weightGradient[i][:j][:,:k]
+			self.weightList[i][:j][:,:k] = self.weightList[i][:j][:,:k] - self.weightGradientMomentum[i][:j][:,:k]
+			self.biasGradientMomentum[i][:j] = gamma*self.biasGradientMomentum[i][:j] + eta*self.biasGradient[i][:j]
+			self.biasList[i][:j] = self.biasList[i][:j] - self.biasGradientMomentum[i][:j]
 
 
 
@@ -139,33 +138,34 @@ class MLP:
 	def forwardFeed(self, img, lbl,checkGradient=0):
 
 		self.nodeValue[0] = copy(img)
-		for i in range(1, nHiddenLayer+2):
-			for j in range(0, int(nNodes[i])):
-				iput = 0
-				for k in range(0, int(nNodes[i-1])):
-					iput+= self.nodeValue[i-1][k]*self.weightList[i-1][k][j]
-				if self.actFunIndex==0:
-					self.nodeValue[i][j] = self.relu(iput) + self.biasList[i][j]
-					self.localGradient[i][j] = self.reluDerivative(iput)
-				else:
-					self.nodeValue[i][j] = self.tanh(iput) + self.biasList[i][j]
-					self.localGradient[i][j] = self.tanhDerivative(iput)
+		# for i in range(1, nHiddenLayer+2):
+		# 	for j in range(0, int(nNodes[i])):
+		# 		iput = 0
+		# 		for k in range(0, int(nNodes[i-1])):
+		# 			iput+= self.nodeValue[i-1][k]*self.weightList[i-1][k][j]
+		# 		if self.actFunIndex==0:
+		# 			self.nodeValue[i][j] = self.relu(iput) + self.biasList[i][j]
+		# 			self.localGradient[i][j] = self.reluDerivative(iput)
+		# 		else:
+		# 			self.nodeValue[i][j] = self.tanh(iput) + self.biasList[i][j]
+		# 			self.localGradient[i][j] = self.tanhDerivative(iput)
 
 		#second method
-		# for i in range(1, nHiddenLayer+1):
-		# 	inputArray = zeros((maxNode))
-		# 	j = int(nNodes[i])
-		# 	k = int(nNodes[i-1])
-		# 	inputArray[:j] = dot(self.nodeValue[i-1][:k], self.weightList[i-1][:k][:,:j])
-		# 	if self.actFunIndex==0:
-		# 		actFun = vectorize(self.relu)
-		# 		actFunDerivative = vectorize(self.reluDerivative)
-		# 	else:
-		# 		actFun = vectorize(self, tanh) 	
-		# 		actFunDerivative = vectorize(self.tanhDerivative)
+		for i in range(1, nHiddenLayer+2):
+			j = int(nNodes[i])
+			k = int(nNodes[i-1])
+			inputArray = zeros((j))
+			#DOUBT
+			inputArray[:j] = dot(self.nodeValue[i-1][:k], self.weightList[i-1][:k][:,:j])
+			if self.actFunIndex==0:
+				actFun = vectorize(self.relu)
+				actFunDerivative = vectorize(self.reluDerivative)
+			else:
+				actFun = vectorize(self.tanh) 	
+				actFunDerivative = vectorize(self.tanhDerivative)
 
-		# 	self.nodeValue[i] = actFun(inputArray[:j]) + self.biasList[i][:j]
-		# 	self.localGradient[i] = actFunDerivative(inputArray[:j])
+			self.nodeValue[i][:j] = actFun(inputArray[:j]) + self.biasList[i][:j]
+			self.localGradient[i][:j] = actFunDerivative(inputArray[:j])
 
 
 		i = nHiddenLayer+2
@@ -179,35 +179,35 @@ class MLP:
 		for j in range(0, int(nNodes[i])):
 			self.localGradient[i][j] *= self.backpropInput[j]
 		
-		for i in range(nHiddenLayer, 0, -1):
-			for j in range(0, int(nNodes[i])):
-				self.backpropInput[j] = 0
-				for k in range(0, int(nNodes[i+1])):
-					self.backpropInput[j] += self.weightList[i][j][k]*self.localGradient[i+1][k]
-				self.biasGradient[i][j] += self.backpropInput[j]
-				self.localGradient[i][j] *= self.backpropInput[j]
+		# for i in range(nHiddenLayer, 0, -1):
+		# 	for j in range(0, int(nNodes[i])):
+		# 		self.backpropInput[j] = 0
+		# 		for k in range(0, int(nNodes[i+1])):
+		# 			self.backpropInput[j] += self.weightList[i][j][k]*self.localGradient[i+1][k]
+		# 		self.biasGradient[i][j] += self.backpropInput[j]
+		# 		self.localGradient[i][j] *= self.backpropInput[j]
 
 		# second method
-		# for i in range(nHiddenLayer,0,-1):
-		# 	j = int(nNodes[i])
-		# 	k = int(nNodes[i+1])
-		# 	self.backpropInput[:j].fill(0)
-		# 	self.backpropInput = dot(self.weightList[i][:j][:,:k], self.localGradient[i+1][:k])
-		# 	self.localGradient[i][:j] = multiply(self.localGradient[i][:j], self.backpropInput[:j])
-		# 	self.biasGradient[i][:j] = self.biasGradient[i][:j] +  self.backpropInput[:j]
+		for i in range(nHiddenLayer,0,-1):
+			j = int(nNodes[i])
+			k = int(nNodes[i+1])
+			self.backpropInput[:j].fill(0)
+			self.backpropInput = dot(self.weightList[i][:j][:,:k], self.localGradient[i+1][:k])
+			self.localGradient[i][:j] = multiply(self.localGradient[i][:j], self.backpropInput[:j])
+			self.biasGradient[i][:j] = self.biasGradient[i][:j] +  self.backpropInput[:j]
 
 
 		
-		for i in range(1, nHiddenLayer+2):
-			for j in range(0, int(nNodes[i])):
-				for k in range(0, int(nNodes[i-1])):
-					self.weightGradient[i-1][k][j] += self.localGradient[i][j]*self.nodeValue[i-1][k]
+		# for i in range(1, nHiddenLayer+2):
+		# 	for j in range(0, int(nNodes[i])):
+		# 		for k in range(0, int(nNodes[i-1])):
+		# 			self.weightGradient[i-1][k][j] += self.localGradient[i][j]*self.nodeValue[i-1][k]
 
 		#second method
-		# for i in range(1, nHiddenLayer+2):
-		# 	j = int(nNodes[i])
-		# 	k = int(nNodes[i-1])
-		# 	self.weightGradient[i-1][:k][:,:j] = self.weightGradient[i-1][:k][:,:j] + dot(self.nodeValue[i-1][:k], self.localGradient[i][:j])
+		for i in range(1, nHiddenLayer+2):
+			j = int(nNodes[i])
+			k = int(nNodes[i-1])
+			self.weightGradient[i-1][:k][:,:j] = self.weightGradient[i-1][:k][:,:j] + dot(self.nodeValue[i-1][:k][:,None], self.localGradient[i][:j][None,:])
 
 
 
@@ -232,6 +232,8 @@ class MLP:
 				self.weightGradient[i-1][:k][:,:j].fill(0)
 				self.biasGradient[i-1][:k].fill(0)
 
+#				print "Testing second method", self.weightGradient[nHiddenLayer][j-1][k-1], self.biasGradient[nHiddenLayer][k-1]
+
 					
 			cost = 0
 			for imgIndex in imgIndexList:
@@ -241,19 +243,23 @@ class MLP:
 				self.backwardFeed(lbl)
 
 			print "Cost of ", iterations, "th iteration = ", cost/nImage
-			for i in range(0, nHiddenLayer+1):
-				for j in range(0, int(nNodes[i])):
-					for k in range(0, int(nNodes[i+1])):
-						self.weightGradient[i][j][k] /= nImage
-					self.biasGradient[i][j]/=nImage
+			# for i in range(0, nHiddenLayer+1):
+			# 	for j in range(0, int(nNodes[i])):
+			# 		for k in range(0, int(nNodes[i+1])):
+			# 			self.weightGradient[i][j][k] /= nImage
+			# 		self.biasGradient[i][j]/=nImage
 
 			#second method
-			# for i in range(0, nHiddenLayer+1):
-			# 	j = int(nNodes[i])
-			# 	k = int(nNodes[i+1])
-			# 	self.weightGradient[i][:j][:,:k] = self.weightGradient[i][:j][:,:k]/(1.0* nImage)
-			# 	self.biasGradient[i][:j] = self.biasGradient[i][:j] /(1.0* nImage)
-				
+			for i in range(0, nHiddenLayer+1):
+				j = int(nNodes[i])
+				k = int(nNodes[i+1])
+				#print "b4 Weight gradient", self.weightGradient[i][:j][:,:k]
+				self.weightGradient[i][:j][:,:k] = self.weightGradient[i][:j][:,:k]/(1.0* nImage)
+				#print "after Weight gradient", self.weightGradient[i][:j][:,:k]
+				#print "before bias grad", self.biasGradient[i][:j]
+				self.biasGradient[i][:j] = self.biasGradient[i][:j] /(1.0* nImage)
+				#print "after bias grad", self.biasGradient[i][:j]
+
 			if self.gradFunIndex==0:
 				self.rmsProp(0.003,0.9)
 			else:
