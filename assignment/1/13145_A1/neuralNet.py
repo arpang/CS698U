@@ -40,13 +40,13 @@ class MLP:
 	def __init__(self, nHiddenLayer, nNodes, actFunIndex, gradFunIndex):
 		self.maxNode = int(max(nNodes))
 		self.localGradient = zeros((nHiddenLayer+2, self.maxNode))
-		self.weightList = random.rand(nHiddenLayer+1, self.maxNode, self.maxNode)
-		self.weightList = self.weightList * 0.001 #0.0005, 70 percent
+		self.weight = random.rand(nHiddenLayer+1, self.maxNode, self.maxNode)
+		self.weight = self.weight * 0.001 #0.0005, 70 percent
 		self.weightGradient = zeros((nHiddenLayer+1, self.maxNode, self.maxNode))
 		self.weightGradientRMSAverage = zeros((nHiddenLayer+1, self.maxNode, self.maxNode))
 		self.weightGradientMomentum = zeros((nHiddenLayer+1, self.maxNode, self.maxNode))
-		self.biasList = random.rand(nHiddenLayer+2, self.maxNode)
-		self.biasList = self.biasList * 0.001
+		self.bias = random.rand(nHiddenLayer+2, self.maxNode)
+		self.bias = self.bias * 0.001
 		self.biasGradient = zeros((nHiddenLayer+2, self.maxNode))
 		self.biasGradientRMSAverage = zeros((nHiddenLayer+2, self.maxNode))
 		self.biasGradientMomentum = zeros((nHiddenLayer+2, self.maxNode))
@@ -78,11 +78,11 @@ class MLP:
 			k = int(nNodes[i+1])
 			self.weightGradientRMSAverage[i][:j][:,:k] = (0.1*gamma) * self.weightGradientRMSAverage[i][:j][:,:k]
 			self.weightGradientRMSAverage[i][:j][:,:k] = self.weightGradientRMSAverage[i][:j][:,:k] + (1.0-gamma) * multiply(self.weightGradient[i][:j][:,:k], self.weightGradient[i][:j][:,:k]) 
-			self.weightList[i][:j][:,:k] = self.weightList[i][:j][:,:k] - eta*divide(self.weightGradient[i][:j][:,:k], sqrt(self.weightGradientRMSAverage[i][:j][:,:k]+epsilon)) 
+			self.weight[i][:j][:,:k] = self.weight[i][:j][:,:k] - eta*divide(self.weightGradient[i][:j][:,:k], sqrt(self.weightGradientRMSAverage[i][:j][:,:k]+epsilon)) 
 
 			self.biasGradientRMSAverage[i][:j] = (0.1*gamma) * self.biasGradientRMSAverage[i][:j]
 			self.biasGradientRMSAverage[i][:j] = self.biasGradientRMSAverage[i][:j] + (1.0-gamma) * multiply(self.biasGradient[i][:j], self.biasGradient[i][:j]) 
-			self.biasList[i][:j] = self.biasList[i][:j] - eta*divide(self.biasGradient[i][:j], sqrt(self.biasGradientRMSAverage[i][:j]+epsilon)) 
+			self.bias[i][:j] = self.bias[i][:j] - eta*divide(self.biasGradient[i][:j], sqrt(self.biasGradientRMSAverage[i][:j]+epsilon)) 
 				
 
 	def gdMomentum(self, eta, gamma):
@@ -90,9 +90,9 @@ class MLP:
 			j = int(nNodes[i])
 			k = int(nNodes[i+1])
 			self.weightGradientMomentum[i][:j][:,:k] = gamma*self.weightGradientMomentum[i][:j][:,:k] + eta*self.weightGradient[i][:j][:,:k]
-			self.weightList[i][:j][:,:k] = self.weightList[i][:j][:,:k] - self.weightGradientMomentum[i][:j][:,:k]
+			self.weight[i][:j][:,:k] = self.weight[i][:j][:,:k] - self.weightGradientMomentum[i][:j][:,:k]
 			self.biasGradientMomentum[i][:j] = gamma*self.biasGradientMomentum[i][:j] + eta*self.biasGradient[i][:j]
-			self.biasList[i][:j] = self.biasList[i][:j] - self.biasGradientMomentum[i][:j]
+			self.bias[i][:j] = self.bias[i][:j] - self.biasGradientMomentum[i][:j]
 
 
 	def softMax(self, inputArray): 
@@ -115,7 +115,7 @@ class MLP:
 			k = int(nNodes[i-1])
 			inputArray = zeros((j))
 
-			inputArray[:j] = dot(self.nodeValue[i-1][:k], self.weightList[i-1][:k][:,:j])
+			inputArray[:j] = dot(self.nodeValue[i-1][:k], self.weight[i-1][:k][:,:j])
 			if self.actFunIndex==0:
 				actFun = vectorize(self.relu)
 				actFunDerivative = vectorize(self.reluDerivative)
@@ -123,7 +123,7 @@ class MLP:
 				actFun = vectorize(self.tanh) 	
 				actFunDerivative = vectorize(self.tanhDerivative)
 
-			self.nodeValue[i][:j] = actFun(inputArray[:j]) + self.biasList[i][:j]
+			self.nodeValue[i][:j] = actFun(inputArray[:j]) + self.bias[i][:j]
 			self.localGradient[i][:j] = actFunDerivative(inputArray[:j])
 
 
@@ -142,7 +142,7 @@ class MLP:
 			j = int(nNodes[i])
 			k = int(nNodes[i+1])
 			self.backpropInput[:j].fill(0)
-			self.backpropInput = dot(self.weightList[i][:j][:,:k], self.localGradient[i+1][:k])
+			self.backpropInput = dot(self.weight[i][:j][:,:k], self.localGradient[i+1][:k])
 			self.localGradient[i][:j] = multiply(self.localGradient[i][:j], self.backpropInput[:j])
 			self.biasGradient[i][:j] = self.biasGradient[i][:j] +  self.backpropInput[:j]
 
@@ -192,6 +192,8 @@ class MLP:
 				self.rmsProp(0.003,0.9)
 			else:
 				self.gdMomentum(0.003,0.9)
+
+		# For computing and plotting validation and training error 		
 
 		# 	if iterations%50 == 0:
 		# 		testInput = zip(XTrain, YTrain)
@@ -253,17 +255,17 @@ class MLP:
 			for i in range(0, nHiddenLayer+1):
 				for j in range(0, int(nNodes[i])):
 					for k in range(0, int(nNodes[i+1])):
-						self.weightList[i][j][k] += 0.0001
+						self.weight[i][j][k] += 0.0001
 						finalCost = self.forwardFeed(img,lbl)
-						self.weightList[i][j][k] -= 0.0001
+						self.weight[i][j][k] -= 0.0001
 						backprop += self.weightGradient[i][j][k] * self.weightGradient[i][j][k] 
 						numerical += (finalCost - initialCost)*100000000.0*(finalCost - initialCost)
 			
 			for i in range(1, nHiddenLayer+1):
 				for j in range(1, int(nNodes[i])):
-					self.biasList[i][j] += 0.0001
+					self.bias[i][j] += 0.0001
 					finalCost = self.forwardFeed(img,lbl)
-					self.biasList[i][j] -= 0.0001
+					self.bias[i][j] -= 0.0001
 					backprop += self.biasGradient[i][j] * self.biasGradient[i][j] 
 					numerical += (finalCost - initialCost)*100000000.0*(finalCost - initialCost)
 			X.append(index)
@@ -301,6 +303,7 @@ YTrain = Y[:len(X)*3/4]
 XValidate = X[len(X)*3/4:]
 YValidate = Y[len(X)*3/4:]
 mlp = MLP(nHiddenLayer, nNodes, 1, 0)
-#mlp.plotGradient(XTrain[:10], YTrain[:10])
+# To plot backprop vs numercial gradient square sum
+# mlp.plotGradient(XTrain[:10], YTrain[:10])
 mlp.train(XTrain, YTrain, XValidate, YValidate, 5000, 10)
 mlp.test(XTest, YTest)

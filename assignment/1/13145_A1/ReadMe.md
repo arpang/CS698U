@@ -45,7 +45,7 @@ I have plotted the training and validation error by varying the activation funct
 The graphs are plotted according to the following naming convention:
 <Number of hidden layer>_<Number of neurons in each hidden layer>_<gradient descent function>_<activation function>_TrainError_ValidationError.
 
-In addition, numerically computed squared sum of gradient of all parameters and that caculated during the back propogation step is also plotted.
+In addition, numerically computed squared sum of gradient of all parameters and that caculated during the back propogation step is also plotted with name "GradSquareSum_BackpropVSNumerical.png"
 
 
 Findings:
@@ -55,4 +55,5 @@ _________
 2) Tanh activation function performs better ReLU, keeping other parameters same. Using ReLU, the misclassification fraction is very jittery and learn is slow
 3) Learning is slow initially in gradient descent with momentum as compared to RMSProp, but with large iterations both the models become comparable  
 4) One hidden layer learns faster and performs better as compared to two hidden layers which performs better than three hidden layers (with number of neurons in each layer = 100)
-5) With hidden layers = 1, neurons in hidden node = 300, tanh(x) activation function, RMSProp gradient descent and 5000 iterations, accuracy on test set is: 94.19%
+5) With hidden layers = 1, neurons in hidden node = 300, tanh(x) activation function, RMSProp gradient descent and 5000 iterations, accuracy on test set is: 94.33%
+6) Gradient computed by backprop step is same as gradient computed numerically
