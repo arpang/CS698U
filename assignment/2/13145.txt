@@ -1,0 +1,22 @@
+Name: Arpan Agrawal
+Roll no.: 13145
+
+Q1
+#params_conv: 2334080
+#params_fc: 58631144
+#FLOPS_conv: 1332219808
+#FLOPS_fc: 117253096
+
+Q2
+Time_conv_laptop: 0.0752773761749 s
+Time_fc_laptop: 0.029791021347 s
+Time_conv_desktop: 0.0228584289551 s
+Time_fc_desktop: 0.0110811710358 s
+
+GHz_laptop: 2.4 GHz
+RAM_laptop: 4 GB
+GHz_desktop: 2.4 GHz
+RAM_desktop: 8 GB
+
+Remark:
+Parameters includes both weights and biases
