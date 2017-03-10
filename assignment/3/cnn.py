@@ -8,11 +8,6 @@ from skimage.measure import block_reduce
 from scipy import signal
 import numpy
 
-# kron divide ke jagah, kron ==, remove unzip
-
-# def increasePad(array):
-# 	return numpy.lib.pad(array, (2,2), 'constant', constant_values=0)
-
 def loadMNIST(dataset="training", digits=arange(10), path="."):
 	# This function is taken from http://g.sweyla.com/blog/2012/mnist-numpy/
 	if dataset == "training":
@@ -137,7 +132,6 @@ class LENET5:
 		self.poolOut1 = self.poolLayer(self.reluOut1, 2)
 		self.poolMaxIndex1 = vectorize(int)(self.reluOut1 == kron(self.poolOut1, ones((1,2, 2))))
 		self.convOut2 = self.forwardConv(self.poolOut1, self.convWeight2)
-		#print self.convOut2
 		self.reluOut2 = self.relu(self.convOut2)
 		self.reluDer2 = self.reluDerivative(self.convOut2)
 		self.poolOut2 = self.poolLayer(self.reluOut2, 2)
@@ -148,7 +142,6 @@ class LENET5:
 		self.fcOut2 = dot(self.fcWeight2, self.reluOut3) #84*1
 		self.reluOut4 = self.relu(self.fcOut2) #84*1
 		self.reluDer4 = self.reluDerivative(self.fcOut2) #84*1
-
 		self.fcOut3 = dot(self.fcWeight3,self.reluOut4) #10*1
 		self.softMaxOut = self.softmaxLayer(self.fcOut3)
 		return -1*math.log(self.softMaxOut[lbl])		
@@ -164,41 +157,24 @@ class LENET5:
 		fcBackInput1 = multiply(self.reluDer3, reluBackInput3) #120*1
 		self.fcWeightGradient1 += dot(fcBackInput1, self.poolOut2.reshape(400,1).transpose()) # 120*400
 		poolBackInput2 = dot(self.fcWeight1.transpose(), fcBackInput1).reshape(16,5,5) # 16*5*5
-#		print "P2", poolBackInput2
 		reluBackInput2 = multiply(kron(poolBackInput2, numpy.ones((1, 2,2))), self.poolMaxIndex2) #16*10*10
-#		print "R2", reluBackInput2
 		convBackInput2 = multiply(self.reluDer2, reluBackInput2) #16*10*10
-#		print "C2", convBackInput2
 		self.conWeightGradient2 += self.weightGradConv(self.poolOut1, convBackInput2) #16*6*5*5
-		#print "CWG2", self.conWeightGradient2
-		# Previously poolBackInput1 = self.backpropConv(self.convOut2, self.convWeight2) #6*12*12
 		poolBackInput1 = self.backpropConv(convBackInput2, self.convWeight2) #6*12*12
-#		print "P1", poolBackInput1
 		reluBackInput1 = multiply(kron(poolBackInput1, numpy.ones((1, 2,2))), self.poolMaxIndex1) #6*24*24
-#		print "R1", reluBackInput2
 		convBackInput1 = multiply(self.reluDer1, reluBackInput1) #6*24*24
-#		print "C1", convBackInput1
 		self.conWeightGradient1 = self.conWeightGradient1 + self.weightGradConv(inputImg, convBackInput1) #6*5*5
-		#print "CWG1", self.conWeightGradient1
 
 	def checkGradient(self, input, lbl):
 		iCost = self.forwardFeed(input, lbl)
 		self.backwardFeed(input, lbl)
-		bpCost = 0
-		numerical = 0
-
 		for i in range(0,self.convWeight1.shape[0]):
 			for j in range(0, self.convWeight1.shape[1]):
 				for k in range(0, self.convWeight1.shape[2]):
-					#for l in range(0, self.convWeight2.shape[3]):
 					self.convWeight1[i][j][k]+=0.0001
 					fCost = self.forwardFeed(input,lbl)
 					self.convWeight1[i][j][k]-=0.0001
-					# bpCost+= self.fcWeightGradient1[i][j]* self.fcWeightGradient1[i][j]
-					# numerical+= (fCost-iCost)*(fCost-iCost)*100000000
 					print i, ' ', j,' ',k, ' ', self.conWeightGradient1[i][j][k],' ', (fCost-iCost)*10000
-
-		#print "Backprop gradient, numerical gradient:", bpCost, numerical
 
 	def gradZero(self):
 		self.fcWeightGradient1.fill(0)
@@ -234,7 +210,7 @@ class LENET5:
 			for index in imgIndexList:
 				cost += self.forwardFeed(XTrain[index], YTrain[index])
 				self.backwardFeed(XTrain[index], YTrain[index])
-			if trained%(batchSize*100) == 0:
+			if trained%(batchSize*10) == 0:
 				print "Cost ", trained/batchSize, " = ", cost/batchSize
 			self.gradDecent(batchSize)
 
@@ -246,7 +222,8 @@ class LENET5:
 		for imgIndex in range(0, totalImages):
 			cost = self.forwardFeed(X[imgIndex], Y[imgIndex])
 			prediction = argmax(self.softMaxOut)
-			print "Image index: ", imgIndex
+			if imgIndex%100 ==0:
+				print "Image index: ", imgIndex
 			if prediction == Y[imgIndex][0]:
 				correctPredictions+=1
 			accuracy = correctPredictions*100.0/totalImages
@@ -257,19 +234,16 @@ X,Y = loadMNIST('training')
 XTest, YTest = loadMNIST('testing')
 X = X/256.0
 XTest = XTest/256.0
-#trainingData = zip(X, Y)
-# random.shuffle(trainingData)
-# X,Y = zip(*trainingData)
+trainingData = zip(X, Y)
+random.shuffle(trainingData)
+X,Y = zip(*trainingData)
 XTrain = X[:len(X)*3/4]
 YTrain = Y[:len(X)*3/4]
 XValidate = X[len(X)*3/4:]
 YValidate = Y[len(X)*3/4:]
 lenet = LENET5(32)
 
-lenet.checkGradient(X[0], Y[0])
-# lenet.train(XTrain, YTrain, XValidate, YValidate, 10)
-# lenet.test(XTest, YTest)
-# lenet.forwardFeed(XTrain[0], YTrain[0])
-# lenet.backwardFeed(XTrain[0], YTrain[0])
-# lenet.gradDecent(1)
+#lenet.checkGradient(X[0], Y[0])
+lenet.train(XTrain, YTrain, XValidate, YValidate, 10)
+lenet.test(XTest, YTest)
 

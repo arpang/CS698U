@@ -1,0 +1,15 @@
+Implement and train the LeNet-5 CNN for MNIST digit classification task (same as in A1):
+
+From scratch e.g., using only Numpy.
+Using a deep learning library; one of Caffe, Torch, Tensorflow, Keras
+
+Compare your results of two implementations above with each other and the A1 MLP implementation.
+
+In the report:
+Compare the time taken by the conv layers vs. the fc layers
+Compare the number of params in the conv layers vs. the fc layers
+Visualize the features extracted from a randomly selected test example for each digit class and show t-SNE plots.
+Plot the training and validation error rates vs. the number of iterations
+Explore the effect of different batch sizes (16, 32, 64, 128) on training
+(An iteration is one mini-batch, an epoch is a pass over the whole training data.)
+
