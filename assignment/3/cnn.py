@@ -42,10 +42,10 @@ def loadMNIST(dataset="training", digits=arange(10), path="."):
 	return images, labels
 
 def reluFunction(x):
-	return max(0.1*x,x)
+	return max(0.01*x,x)
 
 def reluDeriFunction(x):
-	if x<=0:return 0.1
+	if x<=0:return 0.01
 	else:return 1
 
 
@@ -54,7 +54,7 @@ class LENET5:
 	def __init__(self, inputSize):
 		self.relu = vectorize(reluFunction)
 		self.reluDerivative = vectorize(reluDeriFunction)
-		self.convWeight1 = (random.random((6,5,5))-0.5) * 0.001
+		self.convWeight1 = (random.random((6,5,5))) * 0.001
 		self.conWeightGradient1 = zeros((6,5,5))
 		self.conWeightGradientRMSAverage1 = zeros((6,5,5))
 		self.convOut1 = zeros((6,28,28))
@@ -62,7 +62,7 @@ class LENET5:
 		self.reluDer1 = zeros((6,28,28))
 		self.poolOut1 = zeros((6,14,14))
 		self.poolMaxIndex1 = zeros((6,14,14))
-		self.convWeight2 = (random.random((16,6, 5,5))-0.5) * 0.001
+		self.convWeight2 = (random.random((16,6, 5,5))) * 0.001
 		self.conWeightGradient2 = zeros((16, 6, 5, 5))
 		self.conWeightGradientRMSAverage2 = zeros((16, 6, 5, 5))
 		self.convOut2 = zeros((16,10,10))
@@ -70,19 +70,19 @@ class LENET5:
 		self.reluDer2 = zeros((16,10,10))
 		self.poolOut2 = zeros((16,5,5))
 		self.poolMaxIndex2 = zeros((16,5,5))
-		self.fcWeight1 = (random.random((120,400))-0.5) * 0.001
+		self.fcWeight1 = (random.random((120,400))) * 0.001
 		self.fcWeightGradient1 =  zeros((120,400))
 		self.fcWeightGradientRMSAverage1 =  zeros((120,400))
 		self.fcOut1 = zeros(120)
 		self.reluOut3 = zeros((120))
 		self.reluDer3 = zeros((120))
-		self.fcWeight2 = (random.random((84,120))-0.5) * 0.001
+		self.fcWeight2 = (random.random((84,120))) * 0.001
 		self.fcWeightGradient2 = zeros((84,120))
 		self.fcWeightGradientRMSAverage2 = zeros((84,120))
 		self.fcOut2 = zeros((84))
 		self.reluOut4 = zeros((84))
 		self.reluDer4 = zeros((84))
-		self.fcWeight3 = (random.random((10,84))-0.5) * 0.001
+		self.fcWeight3 = (random.random((10,84))) * 0.001
 		self.fcWeightGradient3 = zeros((10,84))
 		self.fcWeightGradientRMSAverage3 =zeros((10,84))
 		self.fcOut3 = zeros((10))
@@ -125,29 +125,23 @@ class LENET5:
 		return block_reduce(input, block_size=(1,receptiveField,receptiveField), func=numpy.max)
 	
 	def softmaxLayer(self, input): #
-		#print "SOftmax input:", input
 		exp = vectorize(math.exp)
 		tmp = exp(input)
 		tmp /= numpy.sum(tmp)
 		return tmp
 
 	def forwardFeed(self, inputImg, lbl): #done 
-		#print "Convweight1", self.convWeight1
-		#print "forward",lbl
 		self.convOut1 = self.forwardConv(inputImg, self.convWeight1)
-		#print "Convweight",self.convWeight1[0]
 		self.reluOut1 = self.relu(self.convOut1)
 		self.reluDer1 = self.reluDerivative(self.convOut1)
 		self.poolOut1 = self.poolLayer(self.reluOut1, 2)
 		self.poolMaxIndex1 = vectorize(int)(self.reluOut1 == kron(self.poolOut1, ones((1,2, 2))))
-		#print "Max pool", self.poolMaxIndex1[0]
 		self.convOut2 = self.forwardConv(self.poolOut1, self.convWeight2)
+		#print self.convOut2
 		self.reluOut2 = self.relu(self.convOut2)
 		self.reluDer2 = self.reluDerivative(self.convOut2)
 		self.poolOut2 = self.poolLayer(self.reluOut2, 2)
 		self.poolMaxIndex2 = vectorize(int)(self.reluOut2 == kron(self.poolOut2, ones((1,2,2))))
-		# print "Pool 2 in", self.reluOut2[0:1]
-		# print "pool2 out", self.poolOut2[0:1]
 		self.fcOut1 = dot(self.fcWeight1,self.poolOut2.reshape(400,1)) #120*1
 		self.reluOut3 = self.relu(self.fcOut1) #120*1
 		self.reluDer3 = self.reluDerivative(self.fcOut1) #120*1
@@ -160,24 +154,15 @@ class LENET5:
 		return -1*math.log(self.softMaxOut[lbl])		
 
 	def backwardFeed(self, inputImg, lbl):
-		#print "back", lbl
 		self.softMaxOut[lbl] -= 1
 		fcBackInput3 = self.softMaxOut #10
-		#print "FC3", fcBackInput3
 		self.fcWeightGradient3 += dot(fcBackInput3, self.reluOut4.transpose()) #10*84
-		#print "FCWG3", self.fcWeightGradient3
 		reluBackInput4 = dot(self.fcWeight3.transpose(), fcBackInput3) #84*1
-#		print "R4", reluBackInput4
 		fcBackInput2 = multiply(self.reluDer4, reluBackInput4) #84*1
-#		print "FC2", fcBackInput2
 		self.fcWeightGradient2 += dot(fcBackInput2, self.reluOut3.transpose()) #84*120
-		#print "FCWG2", self.fcWeightGradient2
 		reluBackInput3 = dot(self.fcWeight2.transpose(), fcBackInput2) #120*1
-#		print "R3", reluBackInput3
 		fcBackInput1 = multiply(self.reluDer3, reluBackInput3) #120*1
-#		print "FC1", fcBackInput1
 		self.fcWeightGradient1 += dot(fcBackInput1, self.poolOut2.reshape(400,1).transpose()) # 120*400
-		#print "FCWG1", self.fcWeightGradient1
 		poolBackInput2 = dot(self.fcWeight1.transpose(), fcBackInput1).reshape(16,5,5) # 16*5*5
 #		print "P2", poolBackInput2
 		reluBackInput2 = multiply(kron(poolBackInput2, numpy.ones((1, 2,2))), self.poolMaxIndex2) #16*10*10
@@ -186,7 +171,8 @@ class LENET5:
 #		print "C2", convBackInput2
 		self.conWeightGradient2 += self.weightGradConv(self.poolOut1, convBackInput2) #16*6*5*5
 		#print "CWG2", self.conWeightGradient2
-		poolBackInput1 = self.backpropConv(self.convOut2, self.convWeight2) #6*12*12
+		# Previously poolBackInput1 = self.backpropConv(self.convOut2, self.convWeight2) #6*12*12
+		poolBackInput1 = self.backpropConv(convBackInput2, self.convWeight2) #6*12*12
 #		print "P1", poolBackInput1
 		reluBackInput1 = multiply(kron(poolBackInput1, numpy.ones((1, 2,2))), self.poolMaxIndex1) #6*24*24
 #		print "R1", reluBackInput2
@@ -201,16 +187,16 @@ class LENET5:
 		bpCost = 0
 		numerical = 0
 
-		for i in range(0,self.convWeight2.shape[0]):
-			for j in range(0, self.convWeight2.shape[1]):
-				for k in range(0, self.convWeight2.shape[2]):
-					for l in range(0, self.convWeight2.shape[3]):
-						self.convWeight2[i][j][k][l]+=0.0001
-						fCost = self.forwardFeed(input,lbl)
-						self.convWeight2[i][j][k][l]-=0.0001
-						# bpCost+= self.fcWeightGradient1[i][j]* self.fcWeightGradient1[i][j]
-						# numerical+= (fCost-iCost)*(fCost-iCost)*100000000
-						print i, ' ', j,' ',k, ' ', l ,' ', self.conWeightGradient2[i][j][k][l],' ', (fCost-iCost)*10000
+		for i in range(0,self.convWeight1.shape[0]):
+			for j in range(0, self.convWeight1.shape[1]):
+				for k in range(0, self.convWeight1.shape[2]):
+					#for l in range(0, self.convWeight2.shape[3]):
+					self.convWeight1[i][j][k]+=0.0001
+					fCost = self.forwardFeed(input,lbl)
+					self.convWeight1[i][j][k]-=0.0001
+					# bpCost+= self.fcWeightGradient1[i][j]* self.fcWeightGradient1[i][j]
+					# numerical+= (fCost-iCost)*(fCost-iCost)*100000000
+					print i, ' ', j,' ',k, ' ', self.conWeightGradient1[i][j][k],' ', (fCost-iCost)*10000
 
 		#print "Backprop gradient, numerical gradient:", bpCost, numerical
 
@@ -248,7 +234,8 @@ class LENET5:
 			for index in imgIndexList:
 				cost += self.forwardFeed(XTrain[index], YTrain[index])
 				self.backwardFeed(XTrain[index], YTrain[index])
-			print "Cost ", trained/batchSize, " = ", cost/batchSize
+			if trained%(batchSize*100) == 0:
+				print "Cost ", trained/batchSize, " = ", cost/batchSize
 			self.gradDecent(batchSize)
 
 	def test(self, XTest, YTest):
@@ -267,19 +254,18 @@ class LENET5:
 		return accuracy
 
 X,Y = loadMNIST('training')
-# XTest, YTest = loadMNIST('testing')
-# X = X/256.0
-# XTest = XTest/256.0
-# #trainingData = zip(X, Y)
-# # random.shuffle(trainingData)
-# # X,Y = zip(*trainingData)
-# XTrain = X[:len(X)*3/4]
-# YTrain = Y[:len(X)*3/4]
-# XValidate = X[len(X)*3/4:]
-# YValidate = Y[len(X)*3/4:]
+XTest, YTest = loadMNIST('testing')
+X = X/256.0
+XTest = XTest/256.0
+#trainingData = zip(X, Y)
+# random.shuffle(trainingData)
+# X,Y = zip(*trainingData)
+XTrain = X[:len(X)*3/4]
+YTrain = Y[:len(X)*3/4]
+XValidate = X[len(X)*3/4:]
+YValidate = Y[len(X)*3/4:]
 lenet = LENET5(32)
 
-# # mlp.plotGradient(XTrain[:10], YTrain[:10])
 lenet.checkGradient(X[0], Y[0])
 # lenet.train(XTrain, YTrain, XValidate, YValidate, 10)
 # lenet.test(XTest, YTest)
